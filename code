@@ -1,0 +1,112 @@
+import javax.swing.*;
+import java.awt.event.*;
+import java.sql.*;
+
+class StudentDatabaseApp extends JFrame {
+    JTextField tfId, tfName, tfDept, tfMarks, tfSearch;
+    JButton btnInsert, btnSearch;
+
+    Connection con;
+
+    public StudentDatabaseApp() {
+        setTitle("Student Management");
+        setSize(400, 400);
+        setLayout(null);
+
+        JLabel l1 = new JLabel("ID:");
+        JLabel l2 = new JLabel("Name:");
+        JLabel l3 = new JLabel("Department:");
+        JLabel l4 = new JLabel("Marks:");
+        JLabel l5 = new JLabel("Search by Name:");
+
+        l1.setBounds(20, 20, 100, 30);
+        l2.setBounds(20, 60, 100, 30);
+        l3.setBounds(20, 100, 100, 30);
+        l4.setBounds(20, 140, 100, 30);
+        l5.setBounds(20, 220, 150, 30);
+
+        tfId = new JTextField();
+        tfName = new JTextField();
+        tfDept = new JTextField();
+        tfMarks = new JTextField();
+        tfSearch = new JTextField();
+
+        tfId.setBounds(150, 20, 200, 30);
+        tfName.setBounds(150, 60, 200, 30);
+        tfDept.setBounds(150, 100, 200, 30);
+        tfMarks.setBounds(150, 140, 200, 30);
+        tfSearch.setBounds(150, 220, 200, 30);
+
+        btnInsert = new JButton("Insert");
+        btnSearch = new JButton("Search");
+
+        btnInsert.setBounds(150, 180, 100, 30);
+        btnSearch.setBounds(150, 260, 100, 30);
+
+        add(l1); add(tfId);
+        add(l2); add(tfName);
+        add(l3); add(tfDept);
+        add(l4); add(tfMarks);
+        add(btnInsert);
+
+        add(l5); add(tfSearch); add(btnSearch);
+
+        // PostgreSQL DB Connection
+        try {
+            con = DriverManager.getConnection(
+                    "jdbc:postgresql://localhost:5432/college_db",
+                    "postgres",  // username
+                    "Yashvin@19"  // password
+            );
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "DB Connection Failed: " + e.getMessage());
+        }
+
+        // Button Listeners
+        btnInsert.addActionListener(e -> insertStudent());
+        btnSearch.addActionListener(e -> searchStudent());
+
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setVisible(true);
+    }
+
+    void insertStudent() {
+        try {
+            String sql = "INSERT INTO students (id, name, department, marks) VALUES (?, ?, ?, ?)";
+            PreparedStatement pst = con.prepareStatement(sql);
+            pst.setInt(1, Integer.parseInt(tfId.getText()));
+            pst.setString(2, tfName.getText());
+            pst.setString(3, tfDept.getText());
+            pst.setInt(4, Integer.parseInt(tfMarks.getText()));
+            pst.executeUpdate();
+            JOptionPane.showMessageDialog(this, "Student Inserted");
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Insert Failed: " + ex.getMessage());
+        }
+    }
+
+    void searchStudent() {
+        try {
+            String sql = "SELECT * FROM students WHERE name = ?";
+            PreparedStatement pst = con.prepareStatement(sql);
+            pst.setString(1, tfSearch.getText());
+
+            ResultSet rs = pst.executeQuery();
+            if (rs.next()) {
+                String result = "ID: " + rs.getInt("id") +
+                        "\nName: " + rs.getString("name") +
+                        "\nDepartment: " + rs.getString("department") +
+                        "\nMarks: " + rs.getInt("marks");
+                JOptionPane.showMessageDialog(this, result);
+            } else {
+                JOptionPane.showMessageDialog(this, "Student Not Found");
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Search Error: " + ex.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        new StudentDatabaseApp();
+    }
+}
